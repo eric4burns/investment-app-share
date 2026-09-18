@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>__LABEL__</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__ROOT__/update.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__ROOT__</string>
+
+  <!-- 18:30, after the US close and after the day's bars have settled. Earlier
+       than that and it fetches a day that is not finished yet. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>18</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+  <!-- Run on wake if the scheduled time was missed. A laptop asleep at 18:30
+       would otherwise silently skip the day. -->
+  <key>RunAtLoad</key>
+  <false/>
+
+  <!-- launchd starts jobs with a minimal PATH and no shell profile, so the
+       python3 that runs at a terminal is not the one found here. update.sh
+       calls python3 by name, so its directory has to be on the PATH or the job
+       fails at 18:30 with an error nobody is watching for. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>__PYTHONDIR__:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>__LOGS__/update.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOGS__/update.log</string>
+</dict>
+</plist>

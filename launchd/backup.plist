@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>__LABEL__</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__ROOT__/backup.sh</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__ROOT__</string>
+
+  <!-- 19:30, an hour after update.sh starts at 18:30, so the snapshot has
+       the night's imports, prices and calls in it. The nightly job takes
+       well under an hour; if it ever does not, the snapshot is simply of the
+       ledger as it stands, which sqlite3's .backup takes consistently. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>19</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+  <!-- Run on wake if the scheduled time was missed. Before this agent
+       existed the newest backup was ten days old, because backups were a
+       thing to remember. -->
+  <key>RunAtLoad</key>
+  <false/>
+
+  <!-- backup.sh needs sqlite3 and python3 (for the curated copy); launchd
+       starts jobs with a minimal PATH and no shell profile. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>__PYTHONDIR__:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>__LOGS__/backup.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOGS__/backup.log</string>
+</dict>
+</plist>

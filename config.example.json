@@ -1,0 +1,44 @@
+{
+  "_comment": [
+    "Copy to config.json and edit. EVERY key is optional \u2014 the app runs with no",
+    "config at all, inferring what it can and reporting every guess it makes.",
+    "config.json is gitignored; this example is not."
+  ],
+  "filing_status": "single",
+  "_filing_status": "single | married_jointly | head_of_household. Drives the standard deduction, every bracket threshold and the Roth phase-out band.",
+  "age": null,
+  "_age": "Only used to decide whether the age-50 catch-up contribution applies.",
+  "employers": [],
+  "_employers": "Names to recognise as salary on a bank statement, e.g. [\"ACME CORP\"]. Usually unnecessary: PAYROLL and DIRECT DEP already match most deposits.",
+  "accounts": {},
+  "_accounts": "Only to CORRECT a wrong guess. Account kind and tax status are inferred from the name \u2014 ROTH IRA, HEALTH SAVINGS ACCOUNT and 401(K) all classify themselves. Example: {\"My Odd Account\": {\"kind\": \"retirement\", \"tax_status\": \"tax_deferred\"}}. kind: brokerage|retirement|hsa|education|checking|credit. tax_status: taxable|tax_free|tax_deferred|hsa|na.",
+  "plan_sleeves": {},
+  "_plan_sleeves": "Self-directed sleeves inside an employer plan, mapped to the plan that funds them: {\"BROKERAGELINK\": \"MY 401K PLAN\"}. Discovered automatically when there is exactly one tax-deferred plan, so usually unnecessary. Getting this wrong makes an internal transfer look like an external deposit, which is indistinguishable from investment gain.",
+  "port": 8737,
+  "host": "127.0.0.1",
+  "_host": "Comma-separated list of addresses to listen on. Add a Tailscale address for phone access: \"127.0.0.1,100.x.y.z\". Do NOT use 0.0.0.0 \u2014 there is no password on this server and it holds your entire financial history.",
+  "stub_employer": null,
+  "_stub_employer": "The payer name on YOUR payroll deposits, e.g. \"L3HARRIS\". A pay stub replaces payroll deposits with gross wages; in a two-income household the Salary category holds both people's, so without this the other earner's wages are subtracted and never added back. Leave null if there is one income.",
+  "spouse_annual": null,
+  "_spouse_annual": "A second W2 income your pay stubs cannot see, as an annual GROSS figure \u2014 the salary, not what lands in the bank. The Roth phase-out is measured on MAGI, a gross figure, so take-home here understates it by the whole tax and deferral load. Cross-check: if deposits annualise to about three quarters of this number, it is gross; if they equal it, it is net and too low.",
+  "savings_goal": 3500,
+  "_savings_goal": "Dollars you intend to keep each month, income minus spending. Money moved into investments counts toward it. Used by Budget -> Plan vs actual.",
+  "chart_proxy": {},
+  "_chart_proxy": "Read a holding's chart from another listing: {\"SIVEF\": \"SIVE.ST\"}. For a foreign company whose US OTC line is thin, gappy or stale while the home listing is liquid. Prices are rescaled into the held symbol's own currency, so every level stays comparable to what you paid.",
+  "alerts": {
+    "ntfy_topic": null,
+    "macos": true,
+    "min_level": "warn"
+  },
+  "_alerts": "Where alerts go. ntfy_topic: a long random topic name you subscribed to in the free ntfy app on your phone \u2014 the name is the secret, so make it long. macos: a notification on this Mac. min_level: the least serious level that gets sent (info | warn | act); everything is stored and shown on the Overview regardless.",
+  "sec_contact": null,
+  "_sec_contact": "Your email address. SEC EDGAR's fair-access policy requires a contact in the User-Agent of every request and throttles requests without one. Only used for the Research tab's SEC lookups.",
+  "label_prefix": "investment-app",
+  "_label_prefix": "launchd label prefix, so two people on one machine do not collide.",
+  "gmail": {
+    "user": "you@gmail.com",
+    "app_password": "xxxx xxxx xxxx xxxx",
+    "since_days": 120
+  },
+  "_gmail": "Optional. Lets Budget \u2192 Loose ends check that Amazon refunds actually reached a card. Create an app password at myaccount.google.com/apppasswords (needs 2-step verification), paste it here yourself. Read-only IMAP; only Amazon return and refund emails are read, and only the order number, date and amount are kept."
+}

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>__LABEL__</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PYTHON__</string>
+    <string>-m</string>
+    <string>app.alerts</string>
+    <string>poll</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__ROOT__</string>
+
+  <!-- Every fifteen minutes, all day. The poll itself checks the clock and
+       exits at once outside the regular session, so this costs nothing at
+       night and on weekends; scheduling only market hours in launchd would
+       need a calendar of holidays it does not have. -->
+  <key>StartInterval</key>
+  <integer>900</integer>
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>__PYTHONDIR__:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>__LOGS__/poll.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOGS__/poll.log</string>
+</dict>
+</plist>

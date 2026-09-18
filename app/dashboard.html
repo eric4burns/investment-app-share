@@ -1,0 +1,1445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Portfolio">
+<meta name="theme-color" content="#EEF1F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131722" media="(prefers-color-scheme: dark)">
+<title>Portfolio</title>
+<script>
+// The theme choice, applied before the stylesheet is parsed so a forced dark
+// page never flashes light, or the reverse, on load. Three states — system,
+// light, dark — stored as portfolio.theme; "system" leaves data-theme unset
+// and the prefers-color-scheme rules in the stylesheet decide.
+(function(){
+  var t = null;
+  try{ t = localStorage.getItem("portfolio.theme"); }catch(e){}
+  if(t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+})();
+</script>
+<style>
+/* The design system (Phase 2, commit 2 — research/audits/phase2-spec-2026-09-13.md
+   § "The design system"). TradingView's register: neutral cool greys with no
+   green tint, one blue accent, the TV green/red pair for candles, fills and
+   change columns, and darker or lighter variants of the same hues wherever the
+   colour is TEXT so everything clears 4.5:1 on the card ground. Amber is
+   reserved for what the user drew or set — a drawn level, a plan price, a trim
+   rung they chose — and nothing automatic may use it. The token names below are
+   the spec's; chartTheme() carries the same literals for the canvas charts,
+   which cannot read a custom property. --faint is for icons and rules only,
+   never text. */
+:root{
+  --bg-0:#EEF1F5; --bg-1:#FFFFFF; --bg-2:#F5F7FA; --bg-3:#E9ECF2;
+  --line:#D1D4DC; --line-strong:#B2B5BE;
+  /* --muted is #666B79, two steps under the spec's #6A6F7D: the spec's value
+     is 4.43:1 on --bg-0, and notes sit on the page ground as often as on a
+     card. --neutral, --hold and --axis follow it. */
+  --text:#131722; --text-2:#3A3F4C; --muted:#666B79; --faint:#9598A1;
+  --accent:#2962FF; --accent-hover:#1E53E5; --accent-fill:#2962FF; --accent-tint:rgba(41,98,255,.10);
+  --up:#07836F; --up-strong:#089981; --down:#E90F20; --down-strong:#F23645;
+  --up-tint:rgba(8,153,129,.12); --down-tint:rgba(242,54,69,.12); --neutral:#666B79;
+  --buy:#2962FF; --add:#2962FF; --sell:#C405E5; --trim:#A06707; --trim-strong:#F59E0B; --hold:#666B79;
+  --warn:#A06707; --warn-strong:#F59E0B; --warn-tint:rgba(245,158,11,.14);
+  --pill-up:#078671; --pill-down:#EB0F21; --pill-trim:#F59E0B; --pill-text:#FFFFFF; --pill-trim-text:#131722;
+  --mine-level:#F59E0B; --mine-cost:#2962FF; --mine-buy:#2962FF; --mine-sell:#C405E5;
+  --grid:#E0E3EB; --axis:#666B79; --furniture:rgba(106,111,125,.55);
+  --ma1:#F59E0B; --ma2:#7E57C2; --ma3:#2962FF;
+  --s1:#2962FF; --s2:#F23645; --s3:#089981; --s4:#7E57C2;
+  --shadow-pop:0 4px 16px rgba(19,23,34,.18);
+  --r-card:8px; --r-ctl:6px; --r-pill:4px;
+  --font:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+/* Dark is declared twice on purpose: once for the system setting, once for the
+   header toggle. data-theme on the root wins over prefers-color-scheme in both
+   directions — the :not([data-theme=light]) guard is what lets a forced light
+   page stay light on a dark system. */
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg-0:#131722; --bg-1:#1B1F2B; --bg-2:#252A38; --bg-3:#2E3444;
+  --line:#2E3444; --line-strong:#434651;
+  --text:#E3E6EE; --text-2:#B7BCCA; --muted:#8A90A2; --faint:#5D6273;
+  --accent:#5280FF; --accent-hover:#6B93FF; --accent-fill:#2962FF; --accent-tint:rgba(82,128,255,.14);
+  --up:#22C38F; --up-strong:#089981; --down:#FF5A63; --down-strong:#F23645;
+  --up-tint:rgba(8,153,129,.18); --down-tint:rgba(242,54,69,.18); --neutral:#8A90A2;
+  --buy:#5280FF; --add:#5280FF; --sell:#F06BD8; --trim:#FFB020; --trim-strong:#F59E0B; --hold:#8A90A2;
+  --warn:#FFB020; --warn-strong:#F59E0B; --warn-tint:rgba(245,158,11,.18);
+  --pill-up:#22C38F; --pill-down:#FF5A63; --pill-trim:#F59E0B; --pill-text:#131722; --pill-trim-text:#131722;
+  --mine-level:#F59E0B; --mine-cost:#5280FF; --mine-buy:#5280FF; --mine-sell:#F06BD8;
+  --grid:#2A2E39; --axis:#8A90A2; --furniture:rgba(138,144,162,.5);
+  --ma1:#F59E0B; --ma2:#B39DDB; --ma3:#5280FF;
+  --s1:#5280FF; --s2:#F7525F; --s3:#22C38F; --s4:#B39DDB;
+  --shadow-pop:0 4px 16px rgba(0,0,0,.5);
+  color-scheme:dark;
+}}
+:root[data-theme=dark]{
+  --bg-0:#131722; --bg-1:#1B1F2B; --bg-2:#252A38; --bg-3:#2E3444;
+  --line:#2E3444; --line-strong:#434651;
+  --text:#E3E6EE; --text-2:#B7BCCA; --muted:#8A90A2; --faint:#5D6273;
+  --accent:#5280FF; --accent-hover:#6B93FF; --accent-fill:#2962FF; --accent-tint:rgba(82,128,255,.14);
+  --up:#22C38F; --up-strong:#089981; --down:#FF5A63; --down-strong:#F23645;
+  --up-tint:rgba(8,153,129,.18); --down-tint:rgba(242,54,69,.18); --neutral:#8A90A2;
+  --buy:#5280FF; --add:#5280FF; --sell:#F06BD8; --trim:#FFB020; --trim-strong:#F59E0B; --hold:#8A90A2;
+  --warn:#FFB020; --warn-strong:#F59E0B; --warn-tint:rgba(245,158,11,.18);
+  --pill-up:#22C38F; --pill-down:#FF5A63; --pill-trim:#F59E0B; --pill-text:#131722; --pill-trim-text:#131722;
+  --mine-level:#F59E0B; --mine-cost:#5280FF; --mine-buy:#5280FF; --mine-sell:#F06BD8;
+  --grid:#2A2E39; --axis:#8A90A2; --furniture:rgba(138,144,162,.5);
+  --ma1:#F59E0B; --ma2:#B39DDB; --ma3:#5280FF;
+  --s1:#5280FF; --s2:#F7525F; --s3:#22C38F; --s4:#B39DDB;
+  --shadow-pop:0 4px 16px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+a{color:var(--accent)}
+a:hover{color:var(--accent-hover)}
+/* 14px body, tabular figures everywhere: a column of prices that jitters by a
+   digit width is the single most visible tell of a page that is not a
+   trading tool. */
+body{margin:0;background:var(--bg-0);color:var(--text);font:14px/1.5 var(--font);
+  font-feature-settings:"tnum";font-variant-numeric:tabular-nums;
+  padding:max(14px,env(safe-area-inset-top)) 20px 48px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+h2{font-size:16px;font-weight:600;margin:8px 0 0;letter-spacing:0;font-family:inherit;color:var(--text)}
+h3{font-size:14px;font-weight:600;margin:0}
+h2 .note{font-weight:400;font-size:13px}
+/* The header: the name, the as-of line, the setup link and the theme toggle
+   on one row. The setup link used to sit under the tab bar with a negative
+   margin pulling it up into the tabs' border. */
+.head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px}
+.head .asof{margin-right:auto}
+.headlink{font-size:13px;color:var(--text-2);text-decoration:none;min-height:32px;display:inline-flex;align-items:center;
+  padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--bg-1)}
+.headlink:hover{color:var(--accent);border-color:var(--accent)}
+.asof{font-size:12px;color:var(--muted)}
+/* System / Light / Dark. Three states rather than a switch because "follow the
+   system" is the state most people want and a switch cannot say it. */
+.theme{display:inline-flex;background:var(--bg-2);border:1px solid var(--line-strong);border-radius:var(--r-ctl);padding:2px;gap:2px}
+.theme button{background:none;border:0;color:var(--text-2);font-size:12px;font-weight:600;min-height:28px;min-width:32px;
+  padding:0 9px;border-radius:4px;cursor:pointer}
+.theme button.on{background:var(--bg-1);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--bg-1);border:1px solid var(--line);
+  border-radius:var(--r-card);padding:10px 12px}
+label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+input,select{font:inherit;font-size:14px;background:var(--bg-1);color:var(--text);border:1px solid var(--line-strong);
+  border-radius:var(--r-ctl);padding:6px 9px;min-height:36px}
+input:focus,select:focus{outline:2px solid var(--accent-tint);border-color:var(--accent)}
+input::placeholder{color:var(--muted)}
+/* Every button is secondary unless it carries .primary — one primary per
+   toolbar (Update, Add, Load, Run, Apply, Record) is the whole rule, and
+   painting all twenty-odd buttons in the accent was why none of them read as
+   the one to press. */
+button{font:inherit;font-size:13px;font-weight:600;background:var(--bg-2);color:var(--text-2);
+  border:1px solid var(--line-strong);border-radius:var(--r-ctl);padding:0 12px;min-height:32px;cursor:pointer;
+  font-feature-settings:"tnum"}
+button:hover{color:var(--text);border-color:var(--text-2)}
+button.primary{background:var(--accent-fill);color:#fff;border-color:var(--accent-fill);font-size:14px;min-height:36px;padding:0 16px}
+button.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+/* One card anatomy everywhere: label → value → delta line. Budget's h3/.big
+   cards and the Trade Bot's cards were the same thing under other names. */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.card{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px;min-width:0}
+.k,.card .k{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.card .v{font-size:26px;font-weight:650;margin-top:4px;letter-spacing:-.02em;line-height:1.2;color:var(--text)}
+.v.up{color:var(--up)} .v.down{color:var(--down)}
+/* The delta line: anything after the value is sentence-case 12px, not another
+   letter-spaced label — the 11px capitals under a value were the least legible
+   text on the page. */
+.card .v ~ .k,.card .v ~ .note,.card .d{font-size:12px;font-weight:400;letter-spacing:0;text-transform:none;
+  color:var(--text-2);margin-top:4px;line-height:1.4}
+.panel{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-card);padding:12px 14px;overflow-x:auto;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text-2);margin-bottom:8px}
+.legend i{display:inline-block;width:11px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+/* Tables: 13px, 36px rows, hover on the row, colour on change columns only.
+   Numbers right-aligned through .num; the first column is the name and is
+   the one cell painted in full ink. */
+table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.35;min-width:380px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:bottom}
+td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--text-2);vertical-align:top}
+td:first-child{color:var(--text);font-weight:600} tr:last-child td{border-bottom:0}
+tbody tr:hover td,table > tr:hover td{background:var(--bg-3)}
+/* A number never wraps: on the phone the table scrolls instead. */
+.num{text-align:right;white-space:nowrap}
+th.num{text-align:right}
+/* A date never wraps; a sentence column takes what is left. "Peak on" wrapped
+   to three lines while the notes beside it had the width. */
+td.date,th.date{white-space:nowrap}
+td.prose{min-width:220px}
+/* Dimmed rows go muted, not translucent: opacity pushed the red and green in
+   them below 3.5:1, and those were the cells the row was there for. */
+tr.dim td{color:var(--muted)}
+tr.dim td:first-child{color:var(--text-2)}
+.note{font-size:13px;color:var(--muted);line-height:1.4}
+.subpanel > .note,.panel > .note:first-child{max-width:72ch}
+.warn{background:var(--down-tint);border:1px solid var(--down-strong);
+  border-radius:var(--r-card);padding:10px 14px;font-size:13px;color:var(--text)}
+svg{display:block;width:100%;height:auto}
+/* HTML axis labels over an SVG chart. The SVG scales with its width, so a
+   text element inside it came out at 6px on a phone; these sit on top at a
+   fixed size and are placed as percentages of the viewBox. */
+.axl{position:absolute;font-size:11px;color:var(--axis);pointer-events:none;white-space:nowrap;line-height:1;
+  transform:translateY(-50%)}
+.axl.end{transform:translate(-100%,-50%)}
+.axl.bottom{transform:translateY(0)}
+.axl.bottom.end{transform:translate(-100%,0)}
+/* Section tabs: an underline row, 44px tall. */
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);
+      margin:0 -4px;padding:0 4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{background:none;color:var(--text-2);border:0;border-bottom:2px solid transparent;
+  border-radius:0;padding:0 14px;font-size:14px;font-weight:500;white-space:nowrap;min-height:44px;margin-bottom:-1px}
+.tabs button:hover{color:var(--text);border-color:transparent;border-bottom-color:var(--line-strong)}
+.tabs button.on{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+.tab{display:flex;flex-direction:column;gap:14px}
+.tab[hidden]{display:none}
+/* Sub-navigation, one row per section. Budget had this first — it was eight
+   stacked sections on one scroll, so "what changed this month" and "what am I
+   paying twice for" were both a hunt — and Phase 2 gave every section the
+   same row. Pills in a tray rather than underlines so they never read as a
+   second row of the main tab bar above them. */
+.subtabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;align-self:flex-start;
+  max-width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-card);padding:3px}
+.subtabs::-webkit-scrollbar{display:none}
+.subtabs button{background:none;color:var(--text-2);border:0;border-radius:var(--r-ctl);
+  padding:0 12px;font-size:13px;font-weight:500;white-space:nowrap;min-height:32px}
+.subtabs button:hover{color:var(--text)}
+.subtabs button.on{background:var(--accent-tint);color:var(--accent);font-weight:600}
+.subpanel{display:flex;flex-direction:column;gap:14px}
+.subpanel[hidden]{display:none}
+/* The section's name, shown only on the phone, where the top bar is hidden
+   and the bottom bar's highlighted slot is the only other cue. */
+.sectiontitle{display:none;font-size:20px;font-weight:600;margin:0}
+/* Phone bottom bar and the More sheet behind it. Both are display:none until
+   the phone media query below, so a wide window never sees them. z-index sits
+   under the fullscreen chart (50) so ⛶ still covers the whole screen. */
+.phonebar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;
+  background:var(--bg-1);border-top:1px solid var(--line);
+  padding:4px 4px calc(4px + env(safe-area-inset-bottom));justify-content:space-around}
+.phonebar button{background:none;color:var(--muted);border:0;border-radius:var(--r-ctl);flex:1 1 0;
+  font-size:12px;font-weight:500;padding:6px 2px;min-height:44px;white-space:nowrap}
+.phonebar button.on{color:var(--accent);font-weight:600}
+.moreback{position:fixed;left:0;right:0;top:0;bottom:calc(53px + env(safe-area-inset-bottom));z-index:41;background:rgba(0,0,0,.4)}
+.moreback[hidden]{display:none}
+/* Sits just above the bar, so the bar (and the lit More) stays in view. */
+.moresheet{position:fixed;left:0;right:0;bottom:calc(53px + env(safe-area-inset-bottom));z-index:42;
+  display:flex;flex-direction:column;gap:2px;
+  background:var(--bg-1);border-top:1px solid var(--line);border-radius:12px 12px 0 0;
+  padding:10px 10px 12px;box-shadow:var(--shadow-pop)}
+.moresheet[hidden]{display:none}
+.moresheet button{background:none;color:var(--text);border:0;border-radius:var(--r-ctl);text-align:left;
+  padding:12px 14px;min-height:44px;font-weight:500;font-size:15px}
+.moresheet button.on{color:var(--accent);font-weight:600;background:var(--accent-tint)}
+/* Magnitude inside a table row: one hue, width carries the value, and the
+   number stays in ink beside it. A category list is a ranking, not eight
+   identities, so it gets the accent rather than the categorical slots. */
+.sb{display:flex;align-items:center;gap:9px;min-width:150px}
+.sb>i{height:8px;border-radius:0 3px 3px 0;background:var(--accent-fill);flex:none;min-width:2px}
+.sb>span{color:var(--text-2);font-size:13px}
+/* Stacked month columns. The 2px gap between segments is a surface-coloured
+   spacer, not padding — without it two adjacent fills of similar lightness read
+   as one block. */
+.stack{display:flex;flex-direction:column-reverse;gap:2px;width:100%}
+.stack>i{display:block;width:100%;min-height:2px}
+.stack>i:last-child{border-radius:3px 3px 0 0}
+.attnrow{display:flex;align-items:flex-start;gap:14px;padding:10px 0;
+  border-bottom:1px solid var(--line)}
+.attnrow:last-child{border-bottom:0}
+.attnamt{min-width:104px;flex:none;text-align:right;font-weight:600;color:var(--text)}
+.attntext{flex:1;color:var(--text-2);line-height:1.45}
+.attntext b{color:var(--text)}
+/* The row's "go" button: secondary, and a real tap target — it was 14px of
+   text with 4px of padding. */
+.attngo{flex:none;font-size:12px;padding:0 10px;min-height:32px;text-transform:capitalize}
+/* Small multiples: one tile per category, all on the SAME vertical scale so
+   the comparison between them is honest. A per-tile scale would make a $40
+   category look identical to a $2,600 one, which is the classic way a grid of
+   sparklines lies. */
+.smgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.smcell{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-card);
+  padding:9px 10px;min-width:0}
+.smhead{display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:2px}
+.smname{font-size:12.5px;color:var(--text);font-weight:600}
+.smnum{font-size:12px;color:var(--text-2)}
+.smbars{display:flex;align-items:flex-end;gap:1px;height:52px;margin-top:14px;
+  position:relative;cursor:crosshair}
+.smbars>i{flex:1 1 auto;min-width:1px;background:var(--accent-fill);border-radius:1px 1px 0 0;
+  display:block;opacity:.75}
+.smbars>i.last{background:var(--accent-fill);opacity:1}
+.smbars>i.hot{opacity:1;background:var(--text)}
+/* The tile's own ceiling. With per-tile scaling the bars no longer say how much
+   money a tile is about, so the number that anchors them is printed on it. */
+.smmax{position:absolute;top:-13px;right:0;font-size:11px;color:var(--muted);
+  letter-spacing:0;pointer-events:none}
+.smgrid.wide{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.smfoot{font-size:12px;color:var(--muted);margin-top:4px}
+/* Follows the cursor across the tiles. pointer-events:none so it can never eat
+   the mousemove that drives it. */
+#smtip{position:fixed;display:none;pointer-events:none;z-index:60;
+  background:var(--bg-1);border:1px solid var(--line-strong);border-radius:var(--r-card);
+  padding:7px 10px;font-size:12px;box-shadow:var(--shadow-pop);white-space:nowrap;color:var(--text)}
+#smtip .t1{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:3px}
+#smtip .t2{color:var(--text);font-weight:600;font-size:13px}
+#smtip .t3{color:var(--text-2);margin-top:3px;font-size:12px}
+.smctl{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:11px}
+.smctl label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.smctl select{font-size:12px;padding:2px 5px;min-height:32px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:3px;
+  vertical-align:middle;margin-right:6px;flex:none}
+/* Readout for the overview value curve. Positioned against the chart box, and
+   pointer-events:none so it can never eat the very mousemove that drives it. */
+.ovtip{position:absolute;top:8px;display:none;pointer-events:none;z-index:3;
+  background:var(--bg-1);border:1px solid var(--line-strong);border-radius:var(--r-card);
+  padding:9px 11px;font-size:12px;box-shadow:var(--shadow-pop);color:var(--text);
+  min-width:190px}
+.ovtip .ovdate{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:6px}
+.ovtip .ovrow{display:flex;align-items:center;gap:7px;margin-top:3px}
+.ovtip .ovrow i{width:9px;height:9px;border-radius:2px;flex:none}
+.ovtip .ovrow span{color:var(--text-2);flex:1;white-space:nowrap}
+.ovtip .ovrow b{color:var(--text)}
+.ovtip .ovrow em{font-style:normal;font-weight:600;min-width:58px;text-align:right}
+.ovtip .ovrow2{margin-top:7px;padding-top:6px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12px;white-space:nowrap}
+.cgrid{display:grid;gap:2px;overflow-x:auto}
+.cell{aspect-ratio:1;min-width:26px;border-radius:3px;display:flex;align-items:center;
+  justify-content:center;font-size:10px}
+.chead{font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;transform:rotate(180deg)}
+.rhead{font-size:11px;color:var(--text-2);display:flex;align-items:center;padding-right:6px;justify-content:flex-end}
+.cb{text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--text-2);display:inline-flex;align-items:center;gap:5px;min-height:32px}
+.indbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center}
+/* A chip is a control group, so it is a tap target as a whole and every
+   button inside it is one on its own — the indicator "×" was 14px. */
+.chip2{display:inline-flex;align-items:center;gap:5px;background:var(--bg-2);
+  border:1px solid var(--line);border-radius:var(--r-ctl);padding:0 8px;font-size:12.5px;min-height:32px;color:var(--text-2)}
+.chip2.off{opacity:.5}
+.chip2 input[type=number]{width:52px;min-height:28px;padding:2px 4px;font-size:12px;
+  background:var(--bg-1);border:1px solid var(--line);border-radius:4px;color:var(--text)}
+.chip2 input[type=color]{min-height:28px;width:36px;padding:1px 2px}
+.chip2 .sw{width:9px;height:9px;border-radius:2px;flex:none}
+.chip2 button{background:none;border:0;color:var(--text-2);padding:0 6px;min-height:30px;min-width:30px;font-size:13px;line-height:1;border-radius:4px}
+.chip2 button:hover{color:var(--text);background:var(--bg-3)}
+.chip2 .cb{min-height:30px}
+.readout{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text-2);
+  min-height:18px;margin-bottom:6px}
+.readout b{color:var(--text);font-weight:600}
+.readout span{white-space:nowrap}
+/* A support or resistance figure in the read, ruled the way the chart draws
+   the line: a dashed hairline in the furniture grey. */
+.srlvl{border-bottom:1px dashed var(--furniture);color:var(--text-2)}
+.threeline{font-size:13px;display:flex;flex-wrap:wrap;gap:4px 0;align-items:baseline}
+.threeline .tlk{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+/* The 1Y / All range toggle: a segmented secondary control, the same shape
+   as the header's theme switch, so it reads as a setting and not as the
+   toolbar's second primary button. */
+.seg{display:inline-flex;background:var(--bg-2);border:1px solid var(--line-strong);border-radius:var(--r-ctl);padding:2px;gap:2px}
+.seg button{background:none;border:0;color:var(--text-2);font-size:12px;font-weight:600;min-height:30px;min-width:36px;
+  padding:0 9px;border-radius:4px;cursor:pointer}
+.seg button.on{background:var(--bg-1);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+/* The label on a lower pane, pinned to its top-left corner. It was pushed up
+   by a fixed negative margin sized for a 130px pane, so on a 44px volume
+   pane it sat inside the price chart above. */
+.panelabel{position:absolute;left:6px;top:2px;z-index:2;pointer-events:none;font-size:11px;color:var(--muted)}
+#lowerwrap > div{position:relative}
+/* The chart is the point of this tab, so it takes most of the window rather
+   than a fixed 420px that looked the same on a laptop and a 27-inch display.
+   Bounded above so it does not become an unreadable letterbox on a tall screen,
+   and below so a short window still shows a chart rather than a sliver. */
+#pricechart{height:clamp(380px, 68vh, 900px)}
+.bgchart{display:flex;align-items:flex-end;gap:3px;height:80px;margin:10px 0 2px}
+.bgbar{flex:1 1 auto;display:flex;align-items:flex-end;min-width:4px}
+.bgbar>span{width:100%;border-radius:2px 2px 0 0;display:block}
+/* Savings has a real zero line — two months of the ledger are negative — so
+   the bars grow up or down from it rather than all sitting on the floor. */
+.svchart{display:flex;gap:3px;margin:12px 0 2px;position:relative}
+.svcol{flex:1 1 auto;min-width:4px;display:flex;flex-direction:column;
+  justify-content:flex-start;cursor:crosshair}
+.svcol>i{display:block;width:100%;border-radius:2px 2px 0 0}
+.svcol>i.neg{border-radius:0 0 2px 2px}
+.svzero{position:absolute;left:0;right:0;height:1px;background:var(--line-strong);
+  pointer-events:none}
+.svcol.hot>i{filter:brightness(1.35)}
+.bgaxis{display:flex;gap:3px;font-size:11px;color:var(--muted)}
+.bgaxis>span{flex:1 1 auto;text-align:center;overflow:hidden}
+#bgUn code{font-size:12px;color:var(--text-2)}
+.drawrow{cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.drawrow.on{outline:2px solid var(--accent);outline-offset:1px}
+.drawrow .drawdel{border:0;background:transparent;cursor:pointer;font-size:14px;
+  line-height:1;padding:0;min-width:30px;min-height:30px;color:var(--text-2)}
+.drawrow .drawdel:hover{color:var(--down)}
+.dtool[aria-pressed="true"]{background:var(--accent-tint);color:var(--accent)}
+#chartpanel.full{position:fixed;inset:0;z-index:50;border-radius:0;overflow:auto;
+  background:var(--bg-0);padding:8px 10px}
+/* Fullscreen used to make the chart SMALLER: the panel filled the viewport, but
+   the toolbars, legend, volume pane and footnote ate 294 of its 669 pixels and
+   the price pane came out at 375 against the 420 it had before. Anything that
+   is not the chart is hidden here — they are all one keystroke away again on
+   exit, and the point of the button is the candles. */
+#chartpanel.full .toolgroup,
+#chartpanel.full #structlegend,
+#chartpanel.full #setupinfo,
+#chartpanel.full #chartinfo{display:none}
+#chartpanel.full{display:flex;flex-direction:column}
+/* Only the price pane absorbs slack. Everything else keeps its natural height —
+   without this the toolbars are flex items that shrink, and the Appearance
+   panel opens into a clipped sliver. */
+#chartpanel.full > *{flex:0 0 auto}
+#chartpanel.full #pricechart{flex:1 1 auto;height:auto;min-height:240px}
+/* A grab bar between panes. Tall enough to hit without hunting for it, and it
+   draws only on hover so a stack of indicators is not a stack of grey lines. */
+.panegrip{height:7px;margin:2px 0 0;cursor:ns-resize;position:relative;
+  border-radius:3px;touch-action:none}
+.panegrip::after{content:"";position:absolute;left:50%;top:3px;width:34px;height:2px;
+  transform:translateX(-50%);border-radius:2px;background:var(--line-strong)}
+.panegrip:hover::after,.panegrip.dragging::after{background:var(--accent);height:3px;top:2px}
+/* Every table is wrapped in one of these by wrapTables() (a MutationObserver,
+   so a table built by any render function gets it without the function
+   knowing). At desktop widths it is just the scroll container; on the phone
+   it also fades the right edge and pins the first column. */
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.tfgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tfcard{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-card);padding:12px}
+.tfcard h4{margin:0 0 6px;font-size:13px;display:flex;justify-content:space-between;align-items:baseline}
+.tfcard ul{margin:6px 0 0;padding-left:16px;display:flex;flex-direction:column;gap:5px;
+  font-size:12.5px;color:var(--text-2);line-height:1.45}
+/* Badges. Two tiers: filled for a call to act on (BUY/ADD, SELL, TRIM),
+   outline for a state (HOLD, NAV, a severity, a source). The same box for
+   .vd, .pill and .verdict so the page has one badge, not three. */
+.vd,.pill,.verdict{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  height:20px;padding:0 7px;border-radius:var(--r-pill);border:1px solid transparent;white-space:nowrap;line-height:1;vertical-align:middle}
+.vd{cursor:pointer}
+/* .pill is the quiet tier — a state word ("at cost", "not seen in 12d") in
+   sentence case at 600, so a sentence-long one does not shout. */
+.pill{font-weight:600;letter-spacing:0;text-transform:none}
+.pill.prov{color:var(--muted);font-weight:500;border-color:var(--line)}
+.vdconf{white-space:nowrap}
+.vd-buy,.vd-add{background:var(--pill-up);color:var(--pill-text)}
+.vd-sell{background:var(--pill-down);color:var(--pill-text)}
+.vd-trim{background:var(--pill-trim);color:var(--pill-trim-text)}
+.vd-hold,.vd-none,.pill{background:transparent;color:var(--text-2);border-color:var(--line-strong)}
+.vd-none{border-style:dashed}
+.vdconf{font-size:11px;color:var(--muted);margin-left:5px;letter-spacing:0;text-transform:none;font-weight:500}
+/* Pill over its confidence word, always — half the cells wrapped and half
+   did not, so the rows came out at two heights. */
+.vdwrap{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.vdwrap .vdconf{margin-left:0}
+.vdrow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+/* Folds. One box for the big group and a plainer row for the sub-fold. */
+.group{border:1px solid var(--line);border-radius:var(--r-card);background:var(--bg-1);overflow:hidden}
+.group + .group{margin-top:8px}
+.group > summary{cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:10px;
+  font-weight:600;font-size:14px;list-style:none;user-select:none;min-height:40px;color:var(--text)}
+.group > summary::-webkit-details-marker{display:none}
+.group > summary::before{content:"▸";color:var(--muted);font-size:11px;transition:transform .12s}
+.group[open] > summary::before{transform:rotate(90deg)}
+.group > summary:hover{background:var(--bg-2)}
+/* A collapsed toolbar should read as a control, not as a section heading the
+   size of the chart below it. */
+.toolgroup{margin:0 0 8px;background:var(--bg-2)}
+/* The two folds share one row while closed — two chips, not two bars — and
+   an open one takes the full width so its controls have room. */
+.folds{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:flex-start}
+#toolsbar #setup{max-width:340px}
+.folds > details,.folds > .group + .group{margin:0;flex:0 0 auto}
+.folds > details:not([open]) > :not(summary){display:none}
+.folds > details[open]{flex:1 1 100%;min-width:0;max-width:100%}
+#structlegend .note{flex:1 1 240px;min-width:0}
+#chartpanel.full .folds{display:none}
+.toolgroup > summary{padding:6px 12px;font-size:13px;font-weight:500;color:var(--text-2);min-height:34px}
+.toolgroup[open] > summary{border-bottom:1px solid var(--line);margin-bottom:6px}
+.toolgroup .indbar{margin-bottom:0;padding:0 10px 8px}
+.group .count{color:var(--muted);font-weight:400;font-size:12px}
+.group .spark{margin-left:auto;display:flex;gap:14px;align-items:center;font-weight:400;
+  font-size:12px}
+.sub{border-top:1px solid var(--line)}
+.sub > summary{cursor:pointer;padding:8px 14px 8px 30px;font-size:13px;font-weight:500;
+  color:var(--text-2);display:flex;gap:8px;align-items:center;list-style:none;min-height:36px}
+.sub > summary::-webkit-details-marker{display:none}
+.sub > summary::before{content:"▸";color:var(--muted);font-size:10px}
+.sub[open] > summary::before{content:"▾"}
+.sub > summary:hover{background:var(--bg-2)}
+details > summary.note{cursor:pointer;min-height:32px;display:flex;align-items:center}
+.grouptools{display:flex;gap:6px;margin-left:auto}
+.finding{background:var(--bg-1);border:1px solid var(--line);border-left-width:3px;
+  border-radius:var(--r-card);padding:12px 14px;margin-bottom:10px}
+.finding.critical{border-left-color:var(--down-strong)}
+.finding.warning{border-left-color:var(--warn-strong)}
+.finding.note{border-left-color:var(--line-strong)}
+.finding h4{margin:0 0 5px;font-size:14px;display:flex;gap:9px;align-items:baseline;flex-wrap:wrap}
+.finding p{margin:0;font-size:13px;color:var(--text-2);line-height:1.5}
+/* Diagnose severity takes the finding's own colour, as an outline badge. */
+.finding.critical .pill{color:var(--down);border-color:var(--down)}
+.finding.warning .pill{color:var(--warn);border-color:var(--warn)}
+.finding.note .pill{color:var(--text-2);border-color:var(--line-strong)}
+.finding h4 .cb{min-height:0}
+.clickable{cursor:pointer}
+.clickable:hover td{background:var(--bg-3)}
+/* A yes/no reading: glyph and colour carry it, the word confirms it. */
+.yn{font-weight:700;white-space:nowrap}
+.yn.yes{color:var(--up)} .yn.no{color:var(--down)}
+.svgbox{position:relative}
+/* Loading and empty states: a skeleton row and one sentence, not a bare
+   "Loading…" that is indistinguishable from a panel that failed. */
+.loading{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.skel{height:12px;border-radius:4px;background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-2) 50%,var(--bg-3) 75%);
+  background-size:200% 100%;animation:skel 1.2s linear infinite;max-width:520px}
+.skel.short{max-width:260px}
+@keyframes skel{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+/* The symbol page header: name, price and day change, the headline call and
+   the position on one wrapping row, with "open another name" at the end. It
+   sits ABOVE the sub-tab row so the five tabs read as tabs of the name. */
+.symhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 14px}
+.symhead .symname{font-size:20px;font-weight:650;letter-spacing:-.01em;color:var(--text)}
+.symhead .symprice{font-size:20px;font-weight:600;margin-left:8px}
+.symhead .sympos{color:var(--text-2);font-size:13px}
+.symhead form{margin-left:auto;display:flex;gap:6px;align-items:center}
+.symhead form input{width:110px}
+/* What is the user's own — a level they drew, a target they typed, a plan they
+   set, a call they made — carries the reserved amber; nothing automatic does. */
+.mine{border-left:3px solid var(--mine-level);padding-left:8px}
+.minetag{display:inline-flex;align-items:center;font-size:11px;font-weight:600;color:var(--warn);
+  border:1px solid var(--warn-strong);border-radius:var(--r-pill);height:18px;padding:0 6px;margin-left:6px;white-space:nowrap}
+/* The levels ladder: every price this name has a reason to be watched at, in
+   price order, the current price a rule across it. */
+.ladder td{vertical-align:middle}
+.ladder .lvlprice{font-size:16px;font-weight:700;white-space:nowrap}
+.ladder tr.now td{background:var(--bg-2);color:var(--text);font-weight:600}
+.ladder tr.mine td:first-child{border-left:3px solid var(--mine-level)}
+/* The three prices on a setups or calls row: the figure, the distance under
+   it. The label above the figure is for the phone, where the header row is
+   gone and each row stacks. */
+.lvl{white-space:nowrap}
+.lvl b{font-size:14px;font-weight:700}
+.lvl .lvlk{display:none;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lvl .lvld{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+.lvl.lvl-buy b{color:var(--buy)} .lvl.lvl-sell b{color:var(--trim)} .lvl.lvl-stop b{color:var(--down)}
+.lvl.none b{color:var(--muted);font-weight:500}
+/* The Today list rows reuse .attnrow: the bold line is what it is, the line
+   under it what to do; the kind word is a quiet label, never the whole row. */
+.todokind{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:6px;white-space:nowrap}
+.attntext .todo1{color:var(--text);font-weight:600}
+.attntext .todo2{color:var(--text-2);margin-top:2px}
+.attnrow.looked{opacity:.55}
+.symread ul{margin:4px 0 0;padding-left:17px;color:var(--text-2);font-size:13px;line-height:1.5}
+/* The basis pill sits in a 150px card on the phone; it may wrap there. */
+#symtrades .card .pill{white-space:normal;height:auto;line-height:1.3;padding:2px 6px;display:inline}
+@media (max-width:640px){
+  .vdrow{flex-wrap:wrap}
+  .vdsym{flex:1 1 100%}
+}
+.vdrow:last-child{border-bottom:0}
+.vdsym{flex:0 0 74px;font-weight:700}
+.vdbody{flex:1 1 auto;min-width:0}
+.vdbody ul{margin:4px 0 0;padding-left:17px;color:var(--muted);font-size:12.5px;line-height:1.5}
+.vdflip{font-size:12px;color:var(--warn);margin-top:4px}
+.vdarrow{color:var(--muted);font-size:12px;margin:0 4px}
+.vdacts{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.vdacts button{font-size:12px;padding:0 9px}
+.vdacts button:hover{border-color:var(--accent);color:var(--accent)}
+.jrow{display:grid;grid-template-columns:minmax(100px,auto) 62px 74px 1fr auto;gap:8px;padding:6px 0;
+  border-bottom:1px solid var(--line);font-size:12.5px;align-items:center}
+.jrow:last-child{border-bottom:0}
+.jsrc{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+/* The DCA ladder's own colours. These are RonnieV's candle colours, named in
+   his own words, so they are attribution rather than a palette decision. The
+   multiplier stays in the text, so the tier is never carried by colour alone —
+   which also keeps the column readable to anyone who cannot separate the lime
+   from the amber. */
+.dca{font-weight:600;border-width:1px;border-style:solid}
+.dca-1{color:var(--text-2);background:var(--bg-2);border-color:var(--line-strong)}
+.dca-2{color:#F0A961;background:color-mix(in srgb,#F0A961 16%,transparent);border-color:color-mix(in srgb,#F0A961 45%,transparent)}
+.dca-3{color:#7BE04A;background:color-mix(in srgb,#7BE04A 16%,transparent);border-color:color-mix(in srgb,#7BE04A 45%,transparent)}
+.dca-4{color:#C08BF5;background:color-mix(in srgb,#C08BF5 18%,transparent);border-color:color-mix(in srgb,#C08BF5 50%,transparent)}
+:root:not([data-theme=dark]) .dca-2{color:#9A5B00}
+:root:not([data-theme=dark]) .dca-3{color:#3D7A12}
+:root:not([data-theme=dark]) .dca-4{color:#6B2FA8}
+/* The three DCA tiers on a dark system with no toggle set: the light overrides
+   above key on the ABSENCE of data-theme=dark, so the system-dark case needs
+   its own restatement. */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]) .dca-2{color:#F0A961}
+  :root:not([data-theme=light]) .dca-3{color:#7BE04A}
+  :root:not([data-theme=light]) .dca-4{color:#C08BF5}
+}
+.phone-only{display:none}
+.col-empty{display:none}
+/* Phone width. The setup selector was wider than the screen and pushed the
+   whole page sideways; the card notes were letter-spaced capitals wrapping
+   three words to a line; the growth charts scaled a desktop aspect ratio
+   down to a sliver; the price chart was a strip. */
+@media(max-width:640px){
+  body{padding-left:16px;padding-right:16px}
+  input,select,button{max-width:100%}
+  /* touch targets: 44px for anything a finger has to land on */
+  button,input,select,.attngo,.headlink,.chip2 button,.drawrow .drawdel{min-height:44px}
+  .chip2{min-height:44px}
+  .theme button{min-height:40px}
+  .subtabs button{min-height:40px}
+  #setup,#scope,#bm{width:100%}
+  /* the top section bar gives way to the bottom one; the page keeps enough
+     bottom padding that the last row is never under it */
+  #tabs{display:none}
+  .phonebar{display:flex}
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+  .sectiontitle{display:block}
+  /* the header on one row — name, setup, theme — with the as-of line under it */
+  .head h1{font-size:17px}
+  .head .asof{order:9;flex:1 1 100%;margin:0}
+  .headlink{margin-left:auto}
+  .phone-only{display:inline}
+  /* sub-tabs as a chip row the width of the screen, faded at the right edge
+     so a row that continues looks like it continues; showSub scrolls the
+     active chip into view */
+  .subtabs{align-self:stretch;max-width:none;
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+  .subtabs button{padding:0 12px}
+  .bar{gap:6px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card{padding:10px 12px}
+  .card .v{font-size:20px}
+  h2{font-size:16px}
+  /* the chart's one row: no caps labels, no picker, no second copy of the
+     name — the header above already says it — so it fits two lines */
+  #chartbar label,#chartbar #sympick,#chartbar #chartsym{display:none}
+  #chartbar #symbol{width:96px}
+  /* the chart takes the screen: the viewport less the header, the name, the
+     chip rows and the axis — never under 420px — rather than a fixed strip
+     that left half the phone to a toolbar */
+  #pricechart{height:max(420px, calc(100vh - 330px));height:max(420px, calc(100dvh - 330px))}
+  /* one line of OHLC that clips at the right rather than wrapping five deep
+     over the candles */
+  .readout{flex-wrap:nowrap;overflow:hidden;gap:10px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 20px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 20px),transparent)}
+  /* the symbol page stacks: header, then the chip row, then the content; the
+     "open another name" box takes its own line under the position */
+  .symhead form{margin-left:0;flex:1 1 100%}
+  .symhead form input{flex:1 1 auto}
+  /* a table of one setup a row stacks on the phone: name and call on the
+     first line, the three prices on the next, the reason under them at full
+     width — five figure columns do not fit 390px side by side */
+  .stacklist tr:first-child{display:none}
+  .stacklist tr{display:flex;flex-wrap:wrap;gap:4px 14px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center}
+  .stacklist td{border:0;padding:0;white-space:normal;min-width:0}
+  .stacklist td.wide{flex:1 1 100%}
+  .stacklist .lvl .lvlk{display:block}
+  .stacklist td:first-child{order:-2}
+  .stacklist td:nth-child(5),.stacklist td:nth-child(6){order:-1}
+  /* the name's basis is wide enough that the first price cannot share its
+     line, so the three prices take a line of their own, a third each */
+  .stacklist td:nth-child(5){flex:1 1 65%}
+  .stacklist td.lvl{flex:1 1 28%;text-align:left}
+  /* the levels ladder: label, price and distance on one line, the meaning
+     under them at full width, instead of a sideways scroll to read it */
+  .ladder tr:first-child{display:none}
+  .ladder tr{display:flex;flex-wrap:wrap;gap:2px 10px;padding:8px 0;border-bottom:1px solid var(--line);align-items:baseline}
+  .ladder td{border:0;padding:0;white-space:normal;min-width:0}
+  .ladder td.prose{flex:1 1 100%;min-width:0}
+  .ladder tr.mine{border-left:3px solid var(--mine-level);padding-left:8px}
+  .ladder tr.mine td:first-child{border-left:0}
+  .ladder tr.now{padding:6px 8px;border-radius:4px}
+  .ladder .lvlprice{margin-left:auto}
+  /* the attention list: amount and the "go" button on one line, the sentence
+     under them at full width. A 74px amount column could not hold
+     "$272,006.61" and ran into the sentence; sized to fit, it squeezed the
+     sentence to a word a line. */
+  .attnrow{flex-wrap:wrap;gap:4px 10px;align-items:center}
+  .attnamt{width:auto;min-width:0;text-align:left;font-size:17px}
+  .attngo{margin-left:auto}
+  .attntext{flex:1 1 100%;order:3}
+  .phone-hide{display:none}
+  table{min-width:0}
+  th,td{min-width:0!important}
+  /* the name column keeps room for the note under the name; without this a
+     table wider than the screen squeezes it to a word a line */
+  td:first-child .note{min-width:150px}
+  /* every table scrolls inside its wrapper, with the right edge faded when
+     there is more to the right and the first column pinned so the row
+     keeps its name while the numbers scroll under it */
+  .tscroll[data-more]{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
+  .tscroll[data-more] table:not(.reclist) td:first-child,
+  .tscroll[data-more] table:not(.reclist) th:first-child{position:sticky;left:0;background:var(--bg-1);z-index:1}
+  .tscroll[data-more] table:not(.reclist) tr:hover td:first-child{background:var(--bg-3)}
+  /* the period/scope bar is one line until tapped: it was 560px of every tab */
+  #filters > *:not(#filtertoggle){display:none}
+  #filters.open > *{display:revert}
+  #filters.open > #filtertoggle{display:block;width:100%}
+  #filtertoggle{display:block;width:100%;text-align:left;background:transparent;color:var(--text);border:0;padding:4px 0;min-height:32px;font-weight:600}
+  /* in a table the pill alone carries the call; the confidence word and its
+     record are on the card */
+  table .vdconf{display:none}
+  td,th{padding-left:6px;padding-right:6px}
+  #setupslist td,#setupslist th{white-space:normal}
+  /* the recurring list stacks: name on its own line, the rest wrapped under it.
+     These sat AFTER the block's closing brace for a while, so the header row
+     was hidden and the numbers unlabeled at every width, not just on a phone. */
+  .reclist tr:first-child{display:none}
+  .reclist tr{display:flex;flex-wrap:wrap;gap:3px 12px;padding:8px 0;border-bottom:1px solid var(--line);align-items:center}
+  .reclist td{border:0;padding:0;white-space:normal}
+  .reclist td:first-child{flex:1 1 100%;font-weight:600}
+  .reclist td:last-child{margin-left:auto}
+  /* the AI Trade Bot orders: five columns do not fit in 390px, and the date
+     column wrapped ISO dates even at 1440. One column, stacked. */
+  .jrow{grid-template-columns:1fr}
+  .jrow>div:last-child{text-align:left!important}
+}
+.tabfail{margin-bottom:12px}
+.tabfail button{margin-left:10px;font-size:12px;padding:0 10px}
+/* Two cards a row even on the narrowest phone: a 26px value at 20px fits
+   147px, and one card a row made Overview a page of scrolling. */
+@media(max-width:420px){
+  .card{padding:10px}
+  .card .v{font-size:19px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Portfolio</h1>
+    <div class="asof" id="asof"></div>
+    <a href="#" id="gsopen" class="headlink"><span class="phone-hide">Import files / setup</span><span class="phone-only">Setup</span></a>
+    <div class="theme" id="theme" role="group" aria-label="Theme">
+      <button type="button" data-theme="system" aria-pressed="false">System</button>
+      <button type="button" data-theme="light" aria-pressed="false">Light</button>
+      <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+    </div>
+  </div>
+  <!-- Seven sections, each with its own sub-tab row (Phase 2, commit 1: the
+       shell — research/audits/phase2-spec-2026-09-13.md). The fifteen old tabs
+       are folded into these; every old hash still resolves through OLD_TABS in
+       the script, and every element id is unchanged so the render functions
+       write where they always did. On a phone this bar hides and the fixed
+       bottom bar (#phonebar) stands in for it. -->
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+    <button data-section="today" role="tab" id="tab-today" aria-controls="panel-today" aria-selected="false">Today</button>
+    <button data-section="money" class="on" role="tab" id="tab-money" aria-controls="panel-money" aria-selected="true">My Money</button>
+    <button data-section="stocks" role="tab" id="tab-stocks" aria-controls="panel-stocks" aria-selected="false">Stocks</button>
+    <button data-section="follow" role="tab" id="tab-follow" aria-controls="panel-follow" aria-selected="false">Who I Follow</button>
+    <button data-section="bot" role="tab" id="tab-bot" aria-controls="panel-bot" aria-selected="false">AI Trade Bot</button>
+    <button data-section="chart" role="tab" id="tab-chart" aria-controls="panel-chart" aria-selected="false">Chart</button>
+    <button data-section="budget" role="tab" id="tab-budget" aria-controls="panel-budget" aria-selected="false">Budget</button>
+  </nav>
+
+  <div id="alert"></div>
+
+  <!-- ============================================================ Today -->
+  <section class="tab" data-panel="today" role="tabpanel" id="panel-today" aria-labelledby="tab-today" hidden>
+    <h2 class="sectiontitle">Today</h2>
+    <div class="subtabs" role="tablist" aria-label="Today sections" data-section="today">
+      <button data-sub="todo"   role="tab" aria-selected="true"  class="on">What to do</button>
+      <button data-sub="market" role="tab" aria-selected="false">Market</button>
+      <button data-sub="alerts" role="tab" aria-selected="false">All alerts</button>
+    </div>
+
+    <!-- ONE ranked list (Phase 2, commit 3). Its four sources — the buy plans,
+         the "worth a look" rows, the alerts and the Diagnose findings — keep
+         their own render functions and hosts, hidden here, so every other
+         reader of those panels (the tests, the alert log below) still works;
+         renderTodo() reads the same data and ranks it by dollars at stake. -->
+    <div class="subpanel" data-sub-panel="todo" role="tabpanel">
+      <div class="panel" id="todo"></div>
+      <div id="todosources" hidden>
+        <div id="buyplans"></div>
+        <div id="attention"></div>
+        <div id="dxfindings"></div>
+      </div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="market" role="tabpanel" hidden>
+      <div class="panel" id="mktmood"></div>
+    </div>
+
+    <!-- The full log: one row per name, kind and day, ticked rows folded away.
+         What to do carries today's; this is the week. -->
+    <div class="subpanel" data-sub-panel="alerts" role="tabpanel" hidden>
+      <div class="panel" id="alerts"></div>
+    </div>
+  </section>
+
+  <!-- ========================================================= My Money -->
+  <section class="tab" data-panel="money" role="tabpanel" id="panel-money" aria-labelledby="tab-money">
+    <h2 class="sectiontitle">My Money</h2>
+    <!-- The period / scope / benchmark bar. It used to sit above every tab
+         while only these panels read it; now it lives with them. -->
+    <div class="bar filters" id="filters">
+      <button id="filtertoggle" class="phone-only" type="button" aria-expanded="false">Period, scope <span class="note" id="filtersummary"></span> ▾</button>
+      <label for="period">Period</label>
+      <select id="period">
+        <option value="1w">Last week</option>
+        <option value="1m">Last month</option>
+        <option value="3m">Last 3 months</option>
+        <option value="6m">Last 6 months</option>
+        <option value="ytd">Year to date</option>
+        <option value="1y">Last year</option>
+        <option value="all" selected>All time</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <label for="from">From</label><input type="date" id="from">
+      <label for="to">To</label><input type="date" id="to">
+      <label for="scope">Scope</label>
+      <select id="scope"></select>
+      <label for="bm">Vs</label>
+      <select id="bm" multiple size="1" style="min-width:120px">
+        <option value="SPY" selected>S&amp;P 500</option>
+        <option value="QQQ" selected>Nasdaq 100</option>
+        <option value="DJIA">Dow</option>
+      </select>
+      <button id="go" class="primary">Update</button>
+    </div>
+
+    <div class="subtabs" role="tablist" aria-label="My Money sections" data-section="money">
+      <button data-sub="overview" role="tab" aria-selected="true"  class="on">Overview</button>
+      <button data-sub="holdings" role="tab" aria-selected="false">Holdings</button>
+      <button data-sub="trades"   role="tab" aria-selected="false">Trades</button>
+      <button data-sub="risk"     role="tab" aria-selected="false">Risk</button>
+      <button data-sub="sectors"  role="tab" aria-selected="false">Sectors</button>
+    </div>
+
+    <div class="subpanel" data-sub-panel="overview" role="tabpanel">
+      <div class="panel" id="getstarted" hidden></div>
+      <div class="cards" id="cards"></div>
+
+      <h2>Portfolio over time</h2>
+      <div class="panel"><div class="legend" id="legend"></div><div id="chart"></div></div>
+
+      <h2>Net worth</h2>
+      <div id="networth"></div>
+
+      <h2>Versus the market</h2>
+      <div class="panel"><table id="bench"></table></div>
+      <div class="note" id="timing"></div>
+
+      <h2>By account</h2>
+      <div class="panel"><table id="accts"></table></div>
+      <div class="note" id="note"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="holdings" role="tabpanel" hidden>
+      <div class="panel"><table id="holdings"></table></div>
+      <!-- Was the top of the Risk tab; it reads the same table from the other
+           side (what each name has given back from its peak). -->
+      <details class="sub"><summary>What each holding has given back</summary>
+        <div class="panel" id="posmoves"></div>
+      </details>
+      <h2>What moved the needle</h2>
+      <div class="panel"><table id="attrib"></table></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="trades" role="tabpanel" hidden>
+      <div class="cards" id="tradecards"></div>
+      <h2>From your Fidelity emails</h2>
+      <div class="panel" id="emailtrades"></div>
+      <h2>Wash sales</h2>
+      <div class="panel" id="washsales"></div>
+      <div class="note" id="tradecount"></div>
+      <div class="panel tscroll"><table id="trades"></table></div>
+      <div class="panel" id="fillpanel" style="display:none"></div>
+      <!-- Your own decisions, graded — the same rows "Calls made" under AI
+           Trade Bot → Its record shows, without the app's. Rendered from the
+           same payload by renderJournal(). -->
+      <details class="sub" id="jrnlfold"><summary>Calls made — your own decisions, graded against SPY</summary>
+        <div class="panel" id="jrnl2" style="margin-top:8px"></div>
+      </details>
+    </div>
+
+    <div class="subpanel" data-sub-panel="risk" role="tabpanel" hidden>
+      <div class="cards" id="riskcards"></div>
+      <div id="ratioguide"></div>
+
+      <div class="panel">
+        <div class="legend"><span><i style="background:var(--down)"></i>underwater — how far below the previous peak</span></div>
+        <div id="ddchart"></div>
+        <div class="note" id="ddinfo"></div>
+      </div>
+      <div class="panel"><table id="risktable"></table></div>
+      <!-- The old Diagnose tab's concentration reading. It is a portfolio-level
+           risk figure, so it folds under the risk table rather than standing as
+           a tab of its own. -->
+      <details class="sub" id="concfold"><summary>Concentration</summary>
+        <div class="cards" id="conccards" style="margin-top:8px"></div>
+        <div class="panel" style="margin-top:8px"><table id="conctable"></table></div>
+        <div class="note" id="concnote"></div>
+        <details style="margin-top:14px" id="dxlevelsfold"><summary class="note" style="cursor:pointer">Levels the encoded methods wait at — the 20-month average, the lower monthly band, the kijun — per holding. Open for the table.</summary>
+        <div class="panel" style="margin-top:8px"><table id="dxlevels"></table></div>
+        <div class="note" id="dxnote"></div></details>
+      </details>
+      <h2>Correlation</h2>
+      <div class="cards" id="corrcards"></div>
+      <div class="panel" id="corrwrap"><div id="corrgrid"></div></div>
+      <div class="note" id="corrnote"></div>
+      <h2>Risk by account</h2>
+      <div class="panel"><table id="acctrisk"></table></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="sectors" role="tabpanel" hidden>
+      <h2>By theme — what you hold, and whether the theme is leading</h2>
+      <div class="panel"><table id="themeexp"></table></div>
+      <div class="note" id="themenote"></div>
+      <h2>By sector</h2>
+      <div class="panel"><table id="sectorexp"></table></div>
+      <div class="note" id="sectornote"></div>
+      <div class="note" id="rotnote"></div>
+    </div>
+  </section>
+
+  <!-- =========================================================== Stocks -->
+  <section class="tab" data-panel="stocks" role="tabpanel" id="panel-stocks" aria-labelledby="tab-stocks" hidden>
+    <h2 class="sectiontitle">Stocks</h2>
+    <div class="subtabs" role="tablist" aria-label="Stocks sections" data-section="stocks">
+      <button data-sub="calls"     role="tab" aria-selected="true"  class="on">Holdings calls</button>
+      <button data-sub="watchlist" role="tab" aria-selected="false">Watchlist</button>
+      <button data-sub="setups"    role="tab" aria-selected="false">Setups</button>
+      <button data-sub="rebuy"     role="tab" aria-selected="false">Buy back</button>
+      <button data-sub="newstocks" role="tab" aria-selected="false">New Stocks</button>
+    </div>
+
+    <!-- The old Outlook's holdings scope. Its Watchlist scope merged into the
+         Watchlist sub-tab, whose table already carries the Call column. The
+         verdict card that used to open under this table is the symbol page
+         now (Chart → The read); a row click opens it. -->
+    <div class="subpanel" data-sub-panel="calls" role="tabpanel">
+      <div class="note" id="pricefresh" style="margin-bottom:8px"></div>
+      <h2 id="vdtitle">Every holding <span class="note" style="font-weight:400">— click a row for the name's page: the read, the levels, who you follow on it, your trades</span></h2>
+      <div class="panel"><table id="vdtable"></table></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="watchlist" role="tabpanel" hidden>
+      <div class="bar">
+        <label for="wlsym">Add</label>
+        <input id="wlsym" placeholder="ticker" style="width:100px" autocomplete="off">
+        <input id="wltags" placeholder="tags, comma separated" style="width:220px">
+        <button id="wladd" class="primary">Add</button>
+        <label for="wlfilter">Filter</label>
+        <select id="wlfilter"><option value="">All tags</option></select>
+        <label for="wlgroup">Group by</label>
+        <select id="wlgroup">
+          <option value="theme">Theme</option>
+          <option value="sector-theme">Sector → theme</option>
+          <option value="sector">Sector</option>
+          <option value="owned">Owned / watching</option>
+          <option value="none">Flat list</option>
+        </select>
+        <label for="wlsort">Sort</label>
+        <select id="wlsort">
+          <option value="chg_1m">1-month change</option>
+          <option value="rs_rank">Relative strength rank</option>
+          <option value="chg_3m">3-month change</option>
+          <option value="chg_12m">12-month change</option>
+          <option value="from_52w_high">From 52-week high</option>
+          <option value="rsi">RSI</option>
+          <option value="symbol">Symbol</option>
+        </select>
+        <button id="wlexpand">Expand all</button>
+        <button id="wlcollapse">Collapse all</button>
+      </div>
+      <div id="wlgroups"></div>
+      <div class="note" id="wlnote"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="setups" role="tabpanel" hidden>
+      <h2>Setups — one list, ranked, each with the reason</h2>
+      <div class="note" style="margin-bottom:8px">A setup is a name reading buy or add <b>at a level to act on tonight</b> (within 3% of it) <b>with at least one more thing lining up</b>:
+        a record of calls with this evidence beating SPY, the weekly or daily agreeing, a followed author's zone or buy at the same price, a cup and handle,
+        or a buy-back reading at the floor. The sector's relative strength (rank of eleven) is written into every reason as support or caution, but never counts on its own — half the list is one sector. Ranked by the record, then by how close the level is. Names that read buy with nothing else lining up fold away below.
+        Each row leads with the three prices — <b style="color:var(--buy)">buy at</b>, <b style="color:var(--trim)">sell into</b>, <b style="color:var(--down)">wrong below</b> — then says why in words, not a score; a dash means no level on that side is tested enough to trade.</div>
+      <div class="bar" style="margin-bottom:8px">
+        <label class="cb"><input type="checkbox" id="suHeld" checked> Holdings</label>
+        <label class="cb"><input type="checkbox" id="suWatch" checked> Watchlist</label>
+        <label class="cb"><input type="checkbox" id="suScan"> Scan (not on your lists — names to look at, not calls)</label>
+      </div>
+      <div class="panel" id="setupslist"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="rebuy" role="tabpanel" hidden>
+      <h2>Buying back <span class="note" style="font-weight:400">— names you sold out of in the last year, and the watchlist; a held name's readings are on its card under Holdings calls</span></h2>
+      <div class="note" style="margin-bottom:8px">The sell side has a measured ladder. The buy-back side does not: no written rebuy rule beat holding on
+        more than 19 of 36 names. So this is the readings that measured best, side by side, with what each has meant — the weekly Williams %R floor,
+        the drawdown from the 52-week high, the followed authors' zones, your own last sale, the wash window — and in words which are there and which
+        are not. The decision is yours.</div>
+      <div class="panel" id="rebuylist"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="newstocks" role="tabpanel" hidden>
+      <h2>New Stocks — names you do not own</h2>
+      <div class="note" style="margin-bottom:8px">Everything here is a name that is not in your book: the nightly
+        scan, and the method screens. Nothing on this tab is a recommendation — it is
+        the list to look through. The charts the people you follow have posted are under <b>Who I Follow → Their charts</b>.</div>
+      <div class="panel" id="discover"></div>
+      <!-- ONE method scanner. The old Backtest tab's "Methods" fold and the old
+           Research tab's "which names satisfy it now" ran the same scan
+           (methods.scan over holdings ∪ watchlist) from two endpoints and
+           drew it twice; this is the one, fed by /api/methods. A followed
+           author's setup that is encoded as a method opens here with that
+           method chosen (Who I Follow → Their methods links to it). -->
+      <details class="sub" id="methodsfold" style="margin-bottom:12px"><summary>By method — which names on your lists meet each encoded method's conditions tonight</summary>
+      <div class="bar">
+        <label for="methodsel">Method</label>
+        <select id="methodsel"></select>
+        <label class="cb"><input type="checkbox" id="heldonly"> Only what I hold</label>
+        <label class="cb"><input type="checkbox" id="qualonly" checked> Only qualifying (≥75%)</label>
+      </div>
+      <div class="panel" id="methoddesc"></div>
+      <div class="panel"><table id="methodscan"></table></div>
+      <div class="note" id="methodnote"></div>
+      <div class="panel" id="methoddetail" style="display:none"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ===================================================== Who I Follow -->
+  <section class="tab" data-panel="follow" role="tabpanel" id="panel-follow" aria-labelledby="tab-follow" hidden>
+    <h2 class="sectiontitle">Who I Follow</h2>
+    <div class="subtabs" role="tablist" aria-label="Who I Follow sections" data-section="follow">
+      <button data-sub="graded"  role="tab" aria-selected="true"  class="on">Their calls, graded</button>
+      <button data-sub="charts"  role="tab" aria-selected="false">Their charts</button>
+      <button data-sub="methods" role="tab" aria-selected="false">Their methods</button>
+      <button data-sub="record"  role="tab" aria-selected="false">Record a call</button>
+    </div>
+
+    <div class="subpanel" data-sub-panel="graded" role="tabpanel">
+      <h2>Followed accounts, graded</h2>
+      <div class="note" style="margin-bottom:8px">
+        A call somebody you follow posted — the account, the name, the day, the price
+        and what they said to do. It is graded exactly as the app's own calls are: the
+        name against SPY over the same dates at 5, 21 and 63 trading days, signed by
+        what the call claimed. A "wait for lower" is recorded as a sell, because that
+        is the claim it makes about the next month. Nothing here is characterised
+        below twenty graded calls. Since 2026-09-13 the nightly X pull reads each new post for a
+        call in words (bought, adding, breakout, higher low; sold, trimming, lower first…) and records it
+        the same night, marked <span class="pill">auto</span> — so the record is the app's from then on
+        and a post deleted later changes nothing. A chart posted without words is not read.
+      </div>
+      <div id="outsidetable"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="charts" role="tabpanel" hidden>
+      <h2>Charts from the people you follow</h2>
+      <div class="note" style="margin-bottom:6px" id="scnote"><div class="loading" aria-busy="true"><div class="skel"></div><div class="note">Reading the saved charts…</div></div></div>
+      <div class="bar" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <label>Who <select id="scauthor"><option value="">everyone</option></select></label>
+        <label>Symbol <select id="scsym"><option value="">every name</option></select></label>
+        <label>From <input type="date" id="scfrom" style="width:140px"></label>
+        <label>To <input type="date" id="scto" style="width:140px"></label>
+        <label><input type="checkbox" id="schide"> hide names I already hold</label>
+        <label title="One section per name, the newest chart from each person side by side"><input type="checkbox" id="scbyname"> side by side, by name</label>
+        <button id="scclear" title="Clear every filter">clear</button>
+      </div>
+      <div class="note" style="margin-bottom:8px">Every chart the people you follow have posted — on X (saved by account the night they post it, whatever happens to the post later), on the Substack, and on the Value Trader's Patreon — with who, where and when on each. A chart's name is the cashtag in its post; one posted without a cashtag shows under the account only.</div>
+      <div id="sccharts"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="methods" role="tabpanel" hidden>
+      <div class="bar">
+        <label for="reskind">Kind</label>
+        <select id="reskind">
+          <option value="setup">Setups — how to read a chart</option>
+          <option value="framework">Frameworks — how to shape the book</option>
+          <option value="intermarket">Intermarket — what regime we are in</option>
+          <option value="macro">Macro — one series read for its structure</option>
+          <option value="thesis">Theses — why a group might re-rate</option>
+        </select>
+        <label for="ressel">Artifact</label><select id="ressel"></select>
+      </div>
+      <div class="panel" id="resdetail"></div>
+      <div class="note" id="resnote"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="record" role="tabpanel" hidden>
+      <h2>Record a call</h2>
+      <div class="note" style="margin-bottom:8px">A call somebody you follow posted, entered by hand. It is graded from the day you record it, under <b>Their calls, graded</b>.</div>
+      <div class="panel" id="outsideform">
+        <div class="bar" style="flex-wrap:wrap;gap:8px">
+          <label for="oaAuthor">Account</label><input id="oaAuthor" placeholder="@handle" style="width:150px" list="oaAuthors">
+          <datalist id="oaAuthors"></datalist>
+          <label for="oaSymbol">Symbol</label><input id="oaSymbol" placeholder="IREN" style="width:80px">
+          <label for="oaDate">Date</label><input type="date" id="oaDate">
+          <label for="oaPrice">Price</label><input type="number" id="oaPrice" step="0.01" placeholder="then" style="width:90px">
+          <label for="oaCall">Call</label>
+          <select id="oaCall"><option value="buy">buy</option><option value="add">add</option>
+            <option value="hold">hold</option><option value="trim">trim</option><option value="sell">sell / wait for lower</option></select>
+          <label for="oaLevel">Level</label><input type="number" id="oaLevel" step="0.01" placeholder="their level" style="width:100px">
+          <input id="oaNote" placeholder="what they said, in a line" style="flex:1;min-width:200px">
+          <button id="oaRecord" class="primary">Record</button>
+        </div>
+        <div class="note" id="oaStatus"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== AI Trade Bot -->
+  <section class="tab" data-panel="bot" role="tabpanel" id="panel-bot" aria-labelledby="tab-bot" hidden>
+    <h2 class="sectiontitle">AI Trade Bot</h2>
+    <div class="subtabs" role="tablist" aria-label="AI Trade Bot sections" data-section="bot">
+      <button data-sub="paper"    role="tab" aria-selected="true"  class="on">Paper account</button>
+      <button data-sub="record"   role="tab" aria-selected="false">Its record</button>
+      <button data-sub="backtest" role="tab" aria-selected="false">Backtest</button>
+    </div>
+
+    <div class="subpanel" data-sub-panel="paper" role="tabpanel">
+      <h2>AI Trade Bot</h2>
+      <div class="note" style="margin-bottom:8px">The engine's own calls, traded forward on a paper account with
+        real fills, so there is a record nobody can backfill. This is the app trading without you — it is the
+        honest test of whether its calls are worth following.</div>
+      <div id="paper"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="record" role="tabpanel" hidden>
+      <h2>The record <span class="note" style="font-weight:400">— your trades and the app's calls, graded the same way; where you disagreed, who was right</span></h2>
+      <div class="panel" id="scorecard"></div>
+      <div class="panel" id="xcheck" style="margin-top:8px"></div>
+      <div class="panel" id="calib" hidden style="margin-top:8px"></div>
+      <div class="panel" id="mycalib" hidden style="margin-top:8px"></div>
+      <h2>Calls made</h2>
+      <div class="panel" id="jrnl"></div>
+      <h2>What it would have said since 2022</h2>
+      <div class="panel" id="replay"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="backtest" role="tabpanel" hidden>
+      <div class="bar">
+        <label for="btmethod">Method</label><select id="btmethod"></select>
+        <label for="btfrom">From</label><input type="date" id="btfrom" value="2021-01-01">
+        <label for="btpos">Max positions</label>
+        <input type="number" id="btpos" value="10" min="1" max="30" style="width:64px">
+        <label for="btthresh">Threshold</label>
+        <input type="number" id="btthresh" value="0.75" min="0.3" max="1" step="0.05" style="width:70px">
+        <label for="btcost">Cost bps</label>
+        <input type="number" id="btcost" value="25" min="0" max="200" style="width:60px">
+        <button id="btrun" class="primary">Run</button>
+      </div>
+      <div class="note" style="margin-bottom:10px">
+        <b>What this does, in plain words.</b> Pretend it is the start date. Score every
+        name on the watchlist using only what was known that day. Buy the ones that pass
+        the method, at the <b>next</b> day's open. At the next rebalance, do it again:
+        sell what no longer passes, buy what now does. Keep going to today, and see what
+        that would have earned against just buying SPY.
+        <div style="margin-top:6px">It runs <b>twice</b>: once on your watchlist and once on
+        a neutral basket of sector funds. Your watchlist is a list of names that already
+        worked — that is why they are on it — so a method that buys strength looks
+        brilliant on it whatever the method is. The sector funds could not have been
+        picked with hindsight. The gap between the two runs is the result; the first
+        number alone is not.</div>
+        <div style="margin-top:6px">The last run for the selected method is shown below
+        until you press Run. A run takes about half a minute.</div>
+      </div>
+      <div class="panel" id="btabout"></div>
+      <div id="btverdict"></div>
+      <div class="cards" id="btcards"></div>
+      <div class="panel"><div class="legend" id="btlegend"></div><div id="btchart"></div></div>
+      <div class="panel"><table id="bttable"></table></div>
+      <div class="note" id="btnote"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ Chart -->
+  <section class="tab" data-panel="chart" role="tabpanel" id="panel-chart" aria-labelledby="tab-chart" hidden>
+    <h2 class="sectiontitle">Chart</h2>
+    <!-- The symbol page (Phase 2, commit 3: research/audits/phase2-spec-2026-09-13.md,
+         "Symbol page contract"). One route, #chart/<sub>?sym=IREN; one loader,
+         renderSymbolPage(); five sub-tabs. The header names the symbol, its
+         price and day change, the headline call and — if held — the position;
+         every name click anywhere in the app lands here through openSymbol(). -->
+    <div class="panel symhead" id="symhead"></div>
+    <div class="subtabs" role="tablist" aria-label="Chart sections" data-section="chart">
+      <button data-sub="chart"  role="tab" aria-selected="true"  class="on">Chart</button>
+      <button data-sub="read"   role="tab" aria-selected="false">The read</button>
+      <button data-sub="plan"   role="tab" aria-selected="false">Plan &amp; levels</button>
+      <button data-sub="follow" role="tab" aria-selected="false">Who I follow on it</button>
+      <button data-sub="trades" role="tab" aria-selected="false">My trades</button>
+    </div>
+
+    <div class="subpanel" data-sub-panel="chart" role="tabpanel">
+    <!-- One row, always (Phase 2, commit 4): the name, the timeframe, the
+         range, Load. The rest of the chrome — 470px of it at 1440, 1,300px on
+         the phone before the first candle — is behind two folds under the
+         panel, each remembering whether it was open. -->
+    <div class="bar" id="chartbar">
+      <label for="symbol">Symbol</label>
+      <input list="symlist" id="symbol" placeholder="ticker" style="width:110px" autocomplete="off">
+      <datalist id="symlist"></datalist>
+      <select id="sympick" title="Jump to a symbol (or press [ and ] to step through)"
+              style="max-width:190px"></select>
+      <label for="tf">Timeframe</label>
+      <select id="tf"><option value="D" selected>Daily</option><option value="5m">5 min</option><option value="15m">15 min</option><option value="1h">1 hour</option><option value="W">Weekly</option><option value="M">Monthly</option><option value="Q">Quarterly</option></select>
+      <span class="seg" id="rangetoggle" role="group" aria-label="Visible range">
+        <button type="button" data-range="1y" class="on" aria-pressed="true" title="The last year of bars">1Y</button>
+        <button type="button" data-range="all" aria-pressed="false" title="Every bar loaded">All</button>
+      </span>
+      <button id="loadsym" class="primary">Load</button>
+      <button id="refresh" title="Fetch the latest bars for this symbol">↻</button>
+      <button id="fullscreen" title="Fullscreen chart" aria-label="Toggle fullscreen chart">⛶</button>
+      <span id="chartsym" style="margin-left:auto;font-weight:600"></span>
+    </div>
+
+    <div class="panel" id="chartpanel">
+      <div class="folds">
+      <details class="group toolgroup" id="toolsfold" data-fold="tools"><summary>Tools</summary>
+      <div class="indbar" id="toolsbar">
+        <label for="setup">Setup</label>
+        <select id="setup"><option value="">Custom</option></select>
+        <label for="chartdate" title="Bar replay: draw the chart as it stood at the close of this day, and read what the engine would have said then. Step with the buttons or , and . keys.">As of</label>
+        <input type="date" id="chartdate" style="width:140px">
+        <button id="asofback" title="A week earlier">◀ wk</button>
+        <button id="asoffwd" title="A week later">wk ▶</button>
+        <button id="asofnow" title="Back to today">today</button>
+        <label for="hist">History</label>
+        <select id="hist">
+          <option value="all">All available</option>
+          <option value="5">5 years</option>
+          <option value="3">3 years</option>
+          <option value="2">2 years</option>
+          <option value="1">1 year</option>
+        </select>
+        <label for="paneSize" title="How tall the RSI, MACD and volume panes under the chart are. Small keeps the price chart as the chart; drag the bar above any pane to fine-tune one.">Panes</label>
+        <select id="paneSize">
+          <option value="small">Small</option>
+          <option value="normal">Normal</option>
+          <option value="large">Large</option>
+        </select>
+        <label for="scale">Scale</label>
+        <select id="scale">
+          <option value="0">Linear</option>
+          <option value="1">Log</option>
+          <option value="2">% change</option>
+          <option value="3">Indexed to 100</option>
+        </select>
+        <label for="compare">Compare</label>
+        <input list="symlist" id="compare" placeholder="none" style="width:100px" autocomplete="off">
+        <select id="cmode"><option value="overlay">Overlay</option><option value="ratio">Ratio</option></select>
+      </div>
+      <div class="indbar" id="drawbar">
+        <span class="chip2" style="font-weight:600">Draw</span>
+        <span class="chip2"><button class="dtool" data-tool="cursor" aria-pressed="true"
+              title="Select, move and delete (Esc)">Select</button></span>
+        <span class="chip2"><button class="dtool" data-tool="trend"
+              title="Trendline: drag from one point to another">Trendline</button></span>
+        <span class="chip2"><button class="dtool" data-tool="ray"
+              title="Ray: a trendline that keeps going to the right edge">Ray</button></span>
+        <span class="chip2"><button class="dtool" data-tool="level"
+              title="Horizontal level: click once">Level</button></span>
+        <span class="chip2"><button class="dtool" data-tool="channel"
+              title="Channel: drag the base line, release, then click to set the width">Channel</button></span>
+        <span class="chip2"><button class="dtool" data-tool="fib"
+              title="Fibonacci: drag across the move you want to retrace">Fib</button></span>
+        <span class="chip2">Colour <input type="color" id="dColour" value="#F59E0B"
+              aria-label="Colour for new drawings"></span>
+        <span class="chip2"><button id="dDelete" disabled
+              title="Delete the selected drawing (Del)">Delete</button></span>
+        <span class="chip2"><button id="dClear"
+              title="Delete every drawing on this chart">Clear all</button></span>
+        <span class="chip2 note" id="dHint"></span>
+      </div>
+      <div class="indbar" id="drawlist"></div>
+      <div id="stylebox">
+        <div class="indbar">
+          <span class="chip2" style="font-weight:600">Appearance</span>
+          <span class="chip2">Up <input type="color" id="cUp" aria-label="Up candle colour"></span>
+          <span class="chip2">Down <input type="color" id="cDown" aria-label="Down candle colour"></span>
+          <span class="chip2">Resistance <input type="color" id="cRes" aria-label="Resistance line colour"></span>
+          <span class="chip2">Support <input type="color" id="cSup" aria-label="Support line colour"></span>
+          <span class="chip2">Buy <input type="color" id="cBuy" aria-label="Buy marker colour"></span>
+          <span class="chip2">Sell <input type="color" id="cSell" aria-label="Sell marker colour"></span>
+          <span class="chip2">Marker
+            <select id="mShape">
+              <option value="arrow">Arrows</option>
+              <option value="circle">Circles</option>
+              <option value="square">Squares</option>
+              <option value="none">None</option>
+            </select></span>
+          <span class="chip2">Size
+            <input type="number" id="mSize" aria-label="Marker size" min="0" max="4" step="1" style="width:52px"></span>
+          <span class="chip2"><label class="cb"><input type="checkbox" id="mLabel">
+            Labels</label></span>
+          <span class="chip2"><label class="cb"><input type="checkbox" id="mDots">
+            Dot at my fill price</label></span>
+          <span class="chip2"><label class="cb"><input type="checkbox" id="mTint">
+            Tint candles I traded</label></span>
+          <span class="chip2"><button id="styleReset">Reset</button></span>
+        </div>
+      </div>
+      </details>
+      <details class="group toolgroup" id="levelsfold" data-fold="levels"><summary>Levels &amp; structure</summary>
+      <div class="indbar" id="structbar">
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stLines" checked> Trendlines</label></span>
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stChannel"> Channels</label></span>
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stZones" checked> Support / resistance</label></span>
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stZonesAll"> Show all S/R</label></span>
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stVprof" checked> Volume by price</label></span>
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stFib"> Fibonacci</label>
+          <input type="number" id="stFibBack" value="120" min="10" max="2000" step="10"
+                 style="width:64px" aria-label="Fibonacci lookback in bars"
+                 title="How many bars back to look for the move being retraced"></span>
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stLabels"> HH/HL labels</label></span>
+        <span class="chip2"><label class="cb"><input type="checkbox" id="stOsc" checked> On oscillators</label></span>
+        <span class="chip2">Pivot sensitivity
+          <input type="number" id="stPivots" aria-label="Pivot sensitivity" value="3" min="1" max="10" style="width:52px"></span>
+      </div>
+      <div class="indbar" id="structlegend"></div>
+      </details>
+      </div>
+      <div class="indbar" id="indbar"></div>
+      <div class="readout" id="readout"></div>
+      <div id="pricechart"></div>
+      <div id="lowerwrap"></div>
+      <div id="cloudkey" class="note"></div>
+      <div id="chartinfo" class="note"></div>
+    </div>
+
+    <div class="panel" id="setupinfo" style="display:none"></div>
+    </div>
+
+    <!-- The read: the verdict card — pills on three timeframes, the case for
+         and against, the flip, the tally, the book and the decision recorder,
+         past calls — then the bar-replay line and the chart's own reading. -->
+    <div class="subpanel" data-sub-panel="read" role="tabpanel" hidden>
+      <div class="panel" id="symread"></div>
+      <div class="note" id="chartasof" hidden style="margin:6px 0"></div>
+      <h2>Technical read <span class="note" style="font-weight:400">— a second reading from the chart alone; it can disagree with the call above, and when it does that is worth knowing</span></h2>
+      <div class="panel" id="tapanel"></div>
+    </div>
+
+    <!-- One levels table: buy at / sell into / wrong below with the move each
+         starts, the buy-back floor, your own target and stop, the authors'
+         zones, your drawn levels — one ladder, sorted by price — then the
+         plan form and the wash note. -->
+    <div class="subpanel" data-sub-panel="plan" role="tabpanel" hidden>
+      <div class="panel" id="symplan"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="follow" role="tabpanel" hidden>
+      <div class="panel" id="symfollow"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="trades" role="tabpanel" hidden>
+      <div class="panel" id="symtrades"></div>
+    </div>
+  </section>
+
+  <!-- =========================================================== Budget -->
+  <section class="tab" data-panel="budget" role="tabpanel" id="panel-budget" aria-labelledby="tab-budget" hidden>
+    <h2 class="sectiontitle">Budget</h2>
+    <div class="bar">
+      <label for="bgAccount">Account</label>
+      <select id="bgAccount"><option value="">All cash accounts</option></select>
+      <label for="bgFrom">From</label>
+      <input type="date" id="bgFrom">
+      <label for="bgTo">To</label>
+      <input type="date" id="bgTo">
+      <button id="bgApply" class="primary">Apply</button>
+      <button id="bgReset">All time</button>
+      <span id="bgRange" class="note" style="margin-left:auto"></span>
+    </div>
+
+    <div class="subtabs" role="tablist" aria-label="Budget sections" data-section="budget">
+      <button data-sub="summary"   role="tab" aria-selected="true"  class="on">Summary</button>
+      <button data-sub="spending"  role="tab" aria-selected="false">Spending</button>
+      <button data-sub="recurring" role="tab" aria-selected="false">Recurring</button>
+      <button data-sub="plan"      role="tab" aria-selected="false">Plan vs actual</button>
+      <button data-sub="taxes"     role="tab" aria-selected="false">Taxes</button>
+      <button data-sub="loose"     role="tab" aria-selected="false">Loose ends</button>
+    </div>
+
+    <div class="subpanel" data-sub-panel="summary" role="tabpanel">
+      <div class="cards" id="bgCards"></div>
+      <div class="panel" id="bgDue" style="margin-top:8px"></div>
+      <div id="bgBlind"></div>
+      <h2>What changed</h2>
+      <div id="bgTrend"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="spending" role="tabpanel" hidden>
+      <h2>Where it goes</h2>
+      <div class="panel"><table id="bgCats"></table></div>
+      <h2>Month by month</h2>
+      <div class="panel" id="bgMonths"></div>
+      <h2>Saved each month</h2>
+      <div class="panel" id="bgSaved"></div>
+      <h2>Each category, month by month</h2>
+      <div class="panel" id="bgCatTrend"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="recurring" role="tabpanel" hidden>
+      <h2>What charges you again and again</h2>
+      <div id="bgRecur"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="plan" role="tabpanel" hidden>
+      <h2>Against your goal</h2>
+      <div class="panel" id="bgGoals"></div>
+      <h2>Your budget sheet against the ledger</h2>
+      <div id="bgRef"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="taxes" role="tabpanel" hidden>
+      <h2>Where this year is heading</h2>
+      <div class="panel" id="bgCross"></div>
+      <h2>Tax year and limits</h2>
+      <div class="bar">
+        <label for="bgStatus">Filing status</label>
+        <select id="bgStatus">
+          <option value="single">Single</option>
+          <option value="married_jointly" selected>Married filing jointly</option>
+          <option value="head_of_household">Head of household</option>
+        </select>
+        <label for="bgAge">Age</label>
+        <input type="number" id="bgAge" min="0" max="120" style="width:70px" value="29"
+               title="Only used to decide whether the age-50 catch-up applies">
+        <span class="note">Changes the brackets and the catch-up, nothing else.</span>
+      </div>
+      <div id="bgTax"></div>
+    </div>
+
+    <div class="subpanel" data-sub-panel="loose" role="tabpanel" hidden>
+      <h2>Not yet categorised</h2>
+      <div class="panel" id="bgUnmatched"></div>
+      <h2>Amazon returns</h2>
+      <div class="panel" id="bgAmazon"><div class="loading" aria-busy="true"><div class="skel"></div><div class="skel short"></div><div class="note">Reading the Amazon returns…</div></div></div>
+    </div>
+  </section>
+</div>
+
+<!-- Phone only (≤640px): the section bar at the bottom of the screen, where a
+     thumb reaches. Five slots; the three sections that do not fit sit behind
+     More. Hidden at desktop widths by the stylesheet, not by script. -->
+<nav class="phonebar" id="phonebar" aria-label="Sections">
+  <button type="button" data-section="today">Today</button>
+  <button type="button" data-section="money">Money</button>
+  <button type="button" data-section="stocks">Stocks</button>
+  <button type="button" data-section="budget">Budget</button>
+  <button type="button" id="phonemore" aria-expanded="false" aria-controls="moresheet">More</button>
+</nav>
+<div class="moreback" id="moreback" hidden></div>
+<div class="moresheet" id="moresheet" hidden>
+  <button type="button" data-section="follow">Who I Follow</button>
+  <button type="button" data-section="bot">AI Trade Bot</button>
+  <button type="button" data-section="chart">Chart</button>
+</div>
+
+<script src="/static/lightweight-charts.js"></script>
+<script src="/static/drawings.js"></script>
+<!-- The page's script, split by section. Every file is a classic script sharing the
+     page's global scope (top-level function, let and const declarations are visible
+     across all of them), so the order below is the dependency order: the chart library,
+     the drawing overlay, core (helpers, the token wrapper, the router) and then the
+     sections. init() is in money.js and is the only thing called here. -->
+<script src="/static/core.js"></script>
+<script src="/static/money.js"></script>
+<script src="/static/today.js"></script>
+<script src="/static/stocks.js"></script>
+<script src="/static/follow.js"></script>
+<script src="/static/bot.js"></script>
+<script src="/static/symbol.js"></script>
+<script src="/static/chart.js"></script>
+<script src="/static/budget.js"></script>
+<script>
+init();
+</script>
+</body>
+</html>

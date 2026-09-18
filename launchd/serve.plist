@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>__LABEL__</string>
+
+  <!-- Run the module, not a shell wrapper, so launchd supervises python
+       directly and KeepAlive restarts the right process. -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PYTHON__</string>
+    <string>-m</string>
+    <string>app.web</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__ROOT__</string>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <!-- Restart if it exits, but not if it exits cleanly: a deliberate stop
+       should stay stopped rather than being fought by launchd. -->
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!-- Loopback plus this machine's Tailscale address, and nothing else.
+         This server has no authentication and reads the whole ledger, so
+         0.0.0.0 would put it on whatever network the laptop joins; naming the
+         two addresses keeps localhost working here and the phone working over
+         the tailnet, while a café network has no socket to reach. The
+         Tailscale address is stable per device. If it is not up yet at login
+         the server binds loopback immediately and keeps retrying the other. -->
+    <key>INVESTMENT_APP_HOST</key>
+    <string>127.0.0.1,__TAILSCALE_IP__</string>
+    <!-- The source watcher re-execs on file changes, which is right at a
+         terminal and wrong for a supervised service: launchd would see the
+         exec and the restart would race the edit. -->
+    <key>INVESTMENT_APP_RELOAD</key>
+    <string>0</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>__LOGS__/serve.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOGS__/serve.log</string>
+</dict>
+</plist>

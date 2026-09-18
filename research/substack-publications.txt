@@ -1,0 +1,2 @@
+# One publication per line: the folder under research/substack/ and the host.
+StonkChris stonkchris.substack.com

@@ -1,0 +1,40 @@
+# The accounts the nightly pull reads, one per line.
+# Blank lines and # comments are ignored. Edit freely -- the pull
+# caches each handle's numeric id in handles.json the first time it
+# sees it, so adding a name costs one extra request once.
+#
+# Seeded from the HANDLES list in research/x_pull.js, which remains as
+# the manual fallback for when the session in data/.x has expired.
+
+LEADER_TRADING
+Lazarus_Capital
+StonkChris
+cantonmeow
+TheRonnieVShow
+jrouldz
+aleabitoreddit
+__Con_
+Freedom_By_40
+MMatters22596
+mind1nvestor
+AsafNaamani
+ZaStocks
+HArctander
+MacroCharts
+RichardMoglen
+GreatMattsby
+Fibonacci_TA
+Mr_Derivatives
+GarethSoloway
+equitydd
+PlayBookTrades
+1ChartMaster
+TomLambos
+FranVezz
+DeNebulord
+Crypto_Moe84
+benjamincowen
+kevinxu
+michael_rigoni
+penny_ether
+nanalyzetweets

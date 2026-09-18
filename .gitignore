@@ -1,0 +1,71 @@
+# Financial data — never versioned
+data/
+data/**
+*.qif
+*.qfx
+*.ofx
+*.qfx
+*.csv
+!app/**/*.csv
+
+# Local artifacts. *.db covers ledger.db; the replayed calls live beside it
+# in ledger-replay.db (app/split_replay.py) and a compaction writes
+# ledger-vacuumed.db for a moment — named here so nobody wonders.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+ledger-replay.db
+ledger-vacuumed.db
+# Backups go to ~/Backups/investment-app (backup.sh), never into the tree;
+# a copy made here by hand is still a database and still ignored.
+backups/
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+
+# Research material — transcripts are third-party content, kept locally only
+research/transcripts/
+research/substack/
+# research/x/ holds other people's posts. Its CONTENTS are excluded rather
+# than the directory itself: git does not descend into an excluded directory,
+# so "research/x/" followed by a negation silently keeps ignoring everything.
+research/x/*
+# The pull's setup steps and account list are configuration, not third-party
+# content, and are useless to a reader if they are not in the repo.
+!research/x/SETUP.md
+!research/x/accounts.txt
+research/*.log
+# The working record of THIS ledger — round trips, net worth, income — and the
+# scripts and notes that seed the owner's own calls. share.sh refuses them too;
+# ignoring them here keeps a future `git add research` from tracking more.
+research/audits/
+research/seed-*
+research/video/*.md
+research/video/*.json
+research/video/shots/
+research/*.pdf
+
+# Dev-only: playwright for the browser smoke test.
+node_modules/
+
+# Card and budget exports: real financial data, same as data/ generally.
+data/cards/*.csv
+data/budget/*.csv
+logs
+logs/
+
+# Personal configuration: account overrides, tax profile, employer names.
+config.json
+
+# Personal source documents: kept locally, never shared.
+*.pages
+
+# Agent worktrees — transient, and each is its own git repo.
+.claude/
+
+# Video-transcription toolchain: a vendored build and a model, both large and
+# both reproducible from research/video/setup.sh
+research/video/vendor/
+research/video/videoocr
